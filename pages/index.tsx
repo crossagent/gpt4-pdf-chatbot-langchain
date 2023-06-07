@@ -25,7 +25,7 @@ export default function Home() {
   }>({
     messages: [
       {
-        message: 'Hi, what would you like to learn about this document?',
+        message: '你好，我是SOC助手，可以先问我知道的内容范围，从而询问你关心的问题',
         type: 'apiMessage',
       },
     ],
@@ -37,8 +37,29 @@ export default function Home() {
   const messageListRef = useRef<HTMLDivElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
+  const [id, setId] = useState<string|null>(null);
+  const [filetime, setFileTime] = useState<string|null>(null);
+
   useEffect(() => {
     textAreaRef.current?.focus();
+    const url = window.location.href;
+    const match = url.match(/id=(\d+)/);
+    const id = match ? match[1] : null;
+    setId(id);
+
+    const currentDate = new Date();
+    const year = currentDate.getFullYear();
+    const month = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+    const day = currentDate.getDate().toString().padStart(2, '0');
+    const hour = currentDate.getHours().toString().padStart(2, '0');
+    const minute = currentDate.getMinutes().toString().padStart(2, '0');
+    const second = currentDate.getSeconds().toString().padStart(2, '0');
+
+    const fileName = `${year}-${month}-${day}_${hour}-${minute}-${second}`;
+
+    setFileTime(fileName);
+
+    console.log(fileName);
   }, []);
 
   //handle form submission
@@ -48,7 +69,7 @@ export default function Home() {
     setError(null);
 
     if (!query) {
-      alert('Please input a question');
+      alert('请输入一个问题');
       return;
     }
 
@@ -77,6 +98,8 @@ export default function Home() {
         body: JSON.stringify({
           question,
           history,
+          id,
+          filetime,
         }),
       });
       const data = await response.json();
@@ -85,18 +108,28 @@ export default function Home() {
       if (data.error) {
         setError(data.error);
       } else {
-        setMessageState((state) => ({
-          ...state,
-          messages: [
-            ...state.messages,
+        setMessageState((state) => {
+          const newMessages: Message[] = [
             {
               type: 'apiMessage',
               message: data.text,
               sourceDocs: data.sourceDocuments,
             },
-          ],
-          history: [...state.history, [question, data.text]],
-        }));
+          ];
+        
+          if (data.finalquestion) {
+            newMessages.unshift({
+              type: 'userMessage',
+              message: "根据对话，您的提问修正为：---" + data.finalquestion + "---",
+            });
+          }
+        
+          return {
+            ...state,
+            messages: [...state.messages, ...newMessages],
+            history: [...state.history, [question, data.text]],
+          };
+        });
       }
       console.log('messageState', messageState);
 
@@ -119,6 +152,14 @@ export default function Home() {
       e.preventDefault();
     }
   };
+
+  //完成提问
+  function handleComplete() {
+    setMessageState((prevState) => ({
+      ...prevState,
+      history: [],
+    }));
+  }
 
   return (
     <>
@@ -223,8 +264,8 @@ export default function Home() {
                     name="userInput"
                     placeholder={
                       loading
-                        ? 'Waiting for response...'
-                        : 'What is this legal case about?'
+                        ? '等待响应中...'
+                        : '你可以回答哪些问题?'
                     }
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
@@ -252,6 +293,14 @@ export default function Home() {
                   </button>
                 </form>
               </div>
+              <button
+                type="button"
+                onClick={handleComplete}
+                disabled={loading}
+                className={styles.completebutton}
+              >
+                完成提问
+              </button>
             </div>
             {error && (
               <div className="border border-red-400 rounded-md p-4">
@@ -261,9 +310,7 @@ export default function Home() {
           </main>
         </div>
         <footer className="m-auto p-4">
-          <a href="https://twitter.com/mayowaoshin">
-            Powered by LangChainAI. Demo built by Mayo (Twitter: @mayowaoshin).
-          </a>
+            注意基于上下文的提问会关注之前的问题，如果2个问题相互不关联，请明确关闭窗口，再打开新窗口提问.
         </footer>
       </Layout>
     </>
