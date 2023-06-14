@@ -38,3 +38,11 @@ next-env.d.ts
 
 #Notion_db
 /Notion_DB
+
+# logs
+/logs
+*.log
+
+# files
+/docs
+*.pdf
