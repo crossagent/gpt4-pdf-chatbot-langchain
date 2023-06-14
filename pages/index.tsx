@@ -25,7 +25,7 @@ export default function Home() {
   }>({
     messages: [
       {
-        message: '你好，我是SOC助手，可以先问我知道的内容范围，从而询问你关心的问题',
+        message: '你好，我是SOC助手',
         type: 'apiMessage',
       },
     ],
@@ -38,14 +38,35 @@ export default function Home() {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   const [id, setId] = useState<string|null>(null);
+  const [webhookUrl, setWebhookUrl] = useState<string|null>(null);
+  
   const [filetime, setFileTime] = useState<string|null>(null);
+
 
   useEffect(() => {
     textAreaRef.current?.focus();
     const url = window.location.href;
-    const match = url.match(/id=(\d+)/);
-    const id = match ? match[1] : null;
+    const idMatch = url.match(/id=(\d+)/);
+    const webhookUrlMatch = url.match(/webhookUrl=(.*)/);
+    
+    const url_id = idMatch ? idMatch[1] : null;
+    const url_webhookUrl = webhookUrlMatch ? webhookUrlMatch[1] : null;
+    
+    var id = '';
+    var webhookUrl = '';
+
+    console.log("url_id", url_id);
+
+    if (url_id && url_webhookUrl) {
+      localStorage.setItem('id', url_id);
+      localStorage.setItem('webhookUrl', url_webhookUrl);
+    } else {
+      id = localStorage.getItem('id') || '';
+      webhookUrl = localStorage.getItem('webhookUrl') || '';
+    }
+
     setId(id);
+    setWebhookUrl(webhookUrl);
 
     const currentDate = new Date();
     const year = currentDate.getFullYear();
@@ -103,7 +124,7 @@ export default function Home() {
         }),
       });
       const data = await response.json();
-      console.log('data', data);
+      console.log('data', data.response1);
 
       if (data.error) {
         setError(data.error);
@@ -154,20 +175,46 @@ export default function Home() {
   };
 
   //完成提问
-  function handleComplete() {
-    setMessageState((prevState) => ({
-      ...prevState,
-      history: [],
-    }));
-  }
+  async function handleComplete(e: any) {
+    //e.preventDefault();
 
+    const isDingdingChecked = e.target.dingding.checked;
+    console.log('isDingdingChecked:', isDingdingChecked);
+
+    if (isDingdingChecked)
+    {
+      try {
+        const response = await fetch('/api/finishchat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            history,
+            id,
+            webhookUrl,
+          }),
+        });
+        const data = await response.json();
+        console.log('data', data);
+      }catch (error) {
+        setLoading(false);
+        setError('An error occurred while fetching the data. Please try again.');
+        console.log('error', error);
+      }
+    }
+  }
   return (
     <>
       <Layout>
         <div className="mx-auto flex flex-col gap-4">
           <h1 className="text-2xl font-bold leading-[1.1] tracking-tighter text-center">
-            Chat With Your Docs
+            基于文档的知识库系统
           </h1>
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <p style={{ marginRight: '1em' }}>用户: {id}</p>
+            <p>开始时间: {filetime}</p>
+          </div>
           <main className={styles.main}>
             <div className={styles.cloud}>
               <div ref={messageListRef} className={styles.messagelist}>
@@ -229,14 +276,14 @@ export default function Home() {
                               <div key={`messageSourceDocs-${index}`}>
                                 <AccordionItem value={`item-${index}`}>
                                   <AccordionTrigger>
-                                    <h3>Source {index + 1}</h3>
+                                    <h3>信息来源 {index + 1}</h3>
                                   </AccordionTrigger>
                                   <AccordionContent>
                                     <ReactMarkdown linkTarget="_blank">
                                       {doc.pageContent}
                                     </ReactMarkdown>
                                     <p className="mt-2">
-                                      <b>Source:</b> {doc.metadata.source}
+                                      <b>来源:</b> {doc.metadata.source}
                                     </p>
                                   </AccordionContent>
                                 </AccordionItem>
@@ -265,7 +312,7 @@ export default function Home() {
                     placeholder={
                       loading
                         ? '等待响应中...'
-                        : '你可以回答哪些问题?'
+                        : '想问什么?'
                     }
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
@@ -293,14 +340,14 @@ export default function Home() {
                   </button>
                 </form>
               </div>
-              <button
-                type="button"
-                onClick={handleComplete}
-                disabled={loading}
-                className={styles.completebutton}
-              >
-                完成提问
-              </button>
+              <form onSubmit={handleComplete}>
+                <label>
+                  <input type="checkbox" name="dingding" defaultChecked/>
+                  同时转发到钉钉
+                </label>
+                <br />
+                <button type="submit" disabled={loading} className={styles.completebutton} >完成提问</button>
+              </form>    
             </div>
             {error && (
               <div className="border border-red-400 rounded-md p-4">

@@ -4,10 +4,8 @@ import { PineconeStore } from 'langchain/vectorstores/pinecone';
 import { makeChain } from '@/utils/makechain';
 import { pinecone } from '@/utils/pinecone-client';
 import { PINECONE_INDEX_NAME, PINECONE_NAME_SPACE } from '@/config/pinecone';
-import { cwd } from 'process';
-import { join } from 'path';
-import fs from 'fs';
 import { dataEmitter } from 'utils/eventEmitter';
+
 
 export default async function handler(
   req: NextApiRequest,
@@ -15,7 +13,7 @@ export default async function handler(
 ) {
   const { question, history, id, filetime } = req.body;
 
-  console.log('question', question, 'id', id, 'filetime', filetime);
+  console.log('question', question);
 
   //only accept post requests
   if (req.method !== 'POST') {
@@ -31,11 +29,13 @@ export default async function handler(
 
   let finalquestion = '';
 
-  dataEmitter.on('dataEvent', (data) => {
-    console.log(`Received message: ${data.finalquestion}`);
+  const dataEventHandler = (data : { finalquestion: string }) => {
+    console.log(`LLM-Question: ${data.finalquestion}`);
     // 更新内容
     finalquestion = data.finalquestion;
-  });
+  };
+  
+  dataEmitter.on('dataEvent', dataEventHandler);
 
   try {
     const index = pinecone.Index(PINECONE_INDEX_NAME);
@@ -61,37 +61,32 @@ export default async function handler(
 
     //console.log('response', response);
     response.finalquestion = finalquestion;
+
+    // 在需要卸载该监听器的时候，使用 dataEventHandler 变量调用 off() 方法
+    dataEmitter.off('dataEvent', dataEventHandler);
+
     res.status(200).json(response);
 
-    // 获取当前工作目录
-    const currentDir = cwd();
-
-    // 创建 logs 目录
-    const logsDir = join(currentDir, 'logs');
-    if (!fs.existsSync(logsDir)) {
-      fs.mkdirSync(logsDir);
+    //save chat history
+    const payload = {
+      question:question,
+      history:history || [], 
+      username:id,
+      filetime:filetime,
+      response:{text:response.text, sourceDocuments:response.sourceDocuments, finalquestion:finalquestion}
     }
 
-    // 创建 id 目录
-    const idDir = join(logsDir, id);
-    if (!fs.existsSync(idDir)) {
-      fs.mkdirSync(idDir);
-    }
+    const forwardUrl = `http://${req.headers.host}/api/save`;
+    const headers = { 'Content-Type': 'application/json' };
+    const saveResult = await fetch(forwardUrl, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(payload),
+    });
 
-    const filePath = join(idDir, `${filetime}.log`);
+    const saveRst = await saveResult.json(); // 解析响应结果为JSON格式
 
-    const text = response.text;
-
-    history.push([question as string, response.text]);
-
-    const logContent = JSON.stringify({ ...history});
-
-    if (!fs.existsSync(filePath)) {
-      fs.writeFileSync(filePath, logContent, 'utf8');
-    } else {
-      fs.truncateSync(filePath); // 清空文件内容
-      fs.appendFileSync(filePath, `\n${logContent}`, 'utf8');
-    }
+    console.log(saveRst.message); // 打印保存的结果
   } catch (error: any) {
     console.log('error', error);
     res.status(500).json({ error: error.message || 'Something went wrong' });

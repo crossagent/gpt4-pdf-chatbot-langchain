@@ -10,9 +10,9 @@ Chat History:
 Follow Up Input: {question}
 Standalone question:`;
 
-const QA_PROMPT = `You are a helpful AI assistant. Use the following pieces of context to answer the question at the end.
+const QA_PROMPT = `You are the SOC project assistant. SOC is a survival shooting game. I am a developer in the project team.Please provide support based on the following pieces of context and answer the question at the end in chinese.
 If you don't know the answer, just say you don't know. DO NOT try to make up an answer.
-If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the context.answer the question in chinese.
+If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the Knowledge Base.
 
 {context}
 
@@ -22,7 +22,7 @@ Helpful answer in markdown:`;
 export const makeChain = (vectorstore: PineconeStore) => {
   const model = new OpenAI({
     temperature: 0, // increase temepreature to get more creative answers
-    modelName: 'gpt-3.5-turbo', //change this to gpt-4 if you have access
+    modelName: 'gpt-3.5-turbo-16k-0613', //change this to gpt-4 if you have access
   });
 
   var handler = new MyCallbackHandler() 

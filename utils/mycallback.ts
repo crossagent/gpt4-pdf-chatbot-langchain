@@ -10,13 +10,8 @@ export class MyCallbackHandler extends BaseCallbackHandler {
   }
 
   async handleChainEnd(_output: ChainValues) {
-    console.log(_output.text);
-
-    console.log(process.env);
-
     const data = { finalquestion: _output.text };
-    var rest = dataEmitter.emit('dataEvent', data);
-    console.log("send dataevent", data, "rst", rest);
+    dataEmitter.emit('dataEvent', data);
   }
 
   async handleAgentAction(action: AgentAction) {

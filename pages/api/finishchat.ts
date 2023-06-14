@@ -3,15 +3,11 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
-) {
-  console.log("钉钉转发进入");
-  const { text, userId, webhook } = req.body;
+) 
+{
+  const { webhookUrl, history, id } = req.body;
 
-  const name = userId;
-  const question = text;
-
-  console.log('name', name);
-  console.log('question', question);
+  console.log('id', id, 'webhookUrl', webhookUrl, 'history', history);
 
   //only accept post requests
   if (req.method !== 'POST') {
@@ -19,19 +15,20 @@ export default async function handler(
     return;
   }
 
-  if (!question) {
-    return res.status(400).json({ message: 'No question in the request' });
-  }
-  
+  //处理一下换行
+  const historyString = history
+  .map(([question, answer]:[string, string]) => `Q：${question}\n\n A：${answer}`)
+  .join('\n\n\n\n');
+
   try {
     //转发给http://172.31.6.56:9140/dingForwardRobot/common/sendMessage
     const payload = {
-      webhookUrl: webhook,
-      content: `你好[ @${name} ](http://),欢迎使用智能助手`,
-      atData: `{"isAtAll":false,"atMobiles":[],"atUserIds":[${name}]}`,
-      title: `${name}`,
+      webhookUrl: webhookUrl,
+      content: `[ @609055430 ](http://)的对话历史 \n\n` + historyString,
+      atData: `{"isAtAll":false,"atMobiles":[],"atUserIds":[${id}]}`,
+      title: `${id}`,
       btnOrientation: '0', 
-      btns: [{ title: '新的提问', actionURL: `http://${req.headers.host}/?id=${userId}&webhookUrl=${webhook}` },], 
+      btns: [{ title: '问题已解决'},{ title: '问题未解决'}], 
     };
 
     const forwardUrl = 'http://172.31.6.56:9140/dingForwardRobot/common/sendMessage';
@@ -42,7 +39,8 @@ export default async function handler(
       body: JSON.stringify(payload),
     });
 
-    res.status(200).json({ message: '钉钉返回' });
+    console.log("钉钉返回", await forwardRes.text());
+    res.status(200).json(await forwardRes.text());
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: error });
