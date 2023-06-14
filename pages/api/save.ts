@@ -66,10 +66,9 @@ export default async function handler(
                 pageContent2: pageContent[1],
                 pageContent3: pageContent[2],
                 pageContent4: pageContent[3],
-                //pageContent:[],
                 timestamp: new Date(),
             });
-    
+
             await newHistory.save();
 
             res.status(200).json({ message: 'Database saved successfully' });
