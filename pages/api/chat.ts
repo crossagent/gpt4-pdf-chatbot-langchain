@@ -11,7 +11,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  const { question, history, username, filetime } = req.body;
+  const { question, history, username, filetime, konwledgebaseName } = req.body;
 
   console.log('question', question);
 
@@ -42,7 +42,7 @@ export default async function handler(
 
     const embeddings = new OpenAIEmbeddings({});
 
-    console.log('namespace', PINECONE_NAME_SPACE);
+    console.log('namespace', konwledgebaseName);
 
     /* create vectorstore*/
     const vectorStore = await PineconeStore.fromExistingIndex(
@@ -50,7 +50,7 @@ export default async function handler(
       {
         pineconeIndex: index,
         textKey: 'text',
-        namespace: PINECONE_NAME_SPACE, //namespace comes from your config folder
+        namespace: konwledgebaseName, //namespace comes from your config folder
       },
     );
 
@@ -80,7 +80,7 @@ export default async function handler(
       response:{text:response.text, sourceDocuments:response.sourceDocuments, finalquestion:finalquestion},
       embeddingmodel:embeddings.modelName,
       gptmodel:process.env.GPT_MODEL,
-      knowageVersion:PINECONE_NAME_SPACE,
+      knowageVersion:konwledgebaseName,
       promptTmplFile:process.env.PROMPT_VERSION,
     }
 

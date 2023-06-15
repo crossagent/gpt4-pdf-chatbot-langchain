@@ -14,7 +14,7 @@ load_dotenv(os.path.join(cwd, '.env'))
 
 PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')    
 PINECONE_INDEX_NAME = os.getenv('PINECONE_INDEX_NAME')
-PINECONE_NAME_SPACE = os.getenv('PINECONE_NAME_SPACE')
+PINECONE_NAME_SPACE = os.getenv('PINECONE_NAME_SPACE_INGEST')
 PINECONE_ENVIRONMENT = os.getenv('PINECONE_ENVIRONMENT')
 
 # Name of directory to retrieve your files from

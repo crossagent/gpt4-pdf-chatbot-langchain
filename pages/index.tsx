@@ -12,6 +12,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { set } from 'mongoose';
 
 export default function Home() {
   const [query, setQuery] = useState<string>('');
@@ -38,10 +39,20 @@ export default function Home() {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   const [username, setUserName] = useState<string|null>(null);
-  const [webhookUrl, setWebhookUrl] = useState<string|null>(null);
+  const [konwledgebaseName, setKonwledgebaseName] = useState<string|null>(null);
   
   const [filetime, setFileTime] = useState<string|null>(null);
 
+  function InitDataByUrlOrLoacal(data:string, localname:string) : string
+  {
+    if (null == data || '' == data) {
+      data = localStorage.getItem(localname) || '';
+    } else {
+      localStorage.setItem(localname, data || '');
+    }
+
+    return data;
+  }
 
   useEffect(() => {
     textAreaRef.current?.focus();
@@ -51,21 +62,23 @@ export default function Home() {
     
     const url_id = idMatch ? idMatch[1] : null;
     const url_webhookUrl = webhookUrlMatch ? webhookUrlMatch[1] : null;
+
+    const urlParams = new URLSearchParams(url);
     
-    var id = '';
-    var webhookUrl = '';
+    const encodedName = urlParams.get('username');
+    const url_name = decodeURIComponent(encodedName || '');
 
-    console.log("url_id", url_id);
+    const url_konwledgebaseName = urlParams.get('konwledgebaseName');
 
-    if (url_id && url_webhookUrl) {
-      localStorage.setItem('id', url_id);
-      localStorage.setItem('webhookUrl', url_webhookUrl);
-    } else {
-      id = localStorage.getItem('id') || '';
-      webhookUrl = localStorage.getItem('webhookUrl') || '';
-    }
+    const id = InitDataByUrlOrLoacal(url_id  || '', 'id');
+    const webhookUrl = InitDataByUrlOrLoacal(url_webhookUrl  || '', 'webhookUrl');
+    const username = InitDataByUrlOrLoacal(url_name  || '', 'username');
+    const konwledgebaseName = InitDataByUrlOrLoacal(url_konwledgebaseName  || '', 'konwledgebaseName');
 
-    setWebhookUrl(webhookUrl);
+    console.log('id', id, 'webhookUrl', webhookUrl, 'username', username, 'konwledgebaseName', konwledgebaseName);
+
+    setKonwledgebaseName(konwledgebaseName as string);
+    setUserName(username as string);
 
     const currentDate = new Date();
     const year = currentDate.getFullYear();
@@ -79,33 +92,10 @@ export default function Home() {
 
     setFileTime(fileName);
 
-    getUserName();
+    
   }, []);
 
-  async function getUserName() {
-    setUserName('白鼠001');
-    return;
-      try {
-        const response = await fetch(`http://172.31.6.56:9134/commonNotice/common/getUserInfo?ding_id=${localStorage.getItem('id')}`, {
-          method: 'Get',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        const data = await response.json();
-        const username = data.name;
-        const email = data.email;
-        console.log('get name', username);
 
-        if (data.error) {
-          setError(data.error);
-        } else
-        {
-          setUserName(username);
-        }
-      } catch (error) {
-      }
-  }
 
   //handle form submission
   async function handleSubmit(e: any) {
@@ -145,6 +135,7 @@ export default function Home() {
           history,
           username,
           filetime,
+          konwledgebaseName,
         }),
       });
       const data = await response.json();
@@ -234,7 +225,8 @@ export default function Home() {
           </h1>
           <div style={{ display: 'flex', justifyContent: 'center' }}>
             <p style={{ marginRight: '1em' }}>用户: {username}</p>
-            <p>开始时间: {filetime}</p>
+            <p>提问时间: {filetime}</p>
+            <p>知识库: {konwledgebaseName}</p>
           </div>
           <main className={styles.main}>
             <div className={styles.cloud}>
