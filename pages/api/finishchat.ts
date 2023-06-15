@@ -9,6 +9,7 @@ export default async function handler(
 
   console.log('id', id, 'webhookUrl', webhookUrl, 'history', history);
 
+
   //only accept post requests
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -19,6 +20,7 @@ export default async function handler(
   const historyString = history
   .map(([question, answer]:[string, string]) => `Q：${question}\n\n A：${answer}`)
   .join('\n\n\n\n');
+
 
   try {
     //转发给http://172.31.6.56:9140/dingForwardRobot/common/sendMessage

@@ -17,6 +17,10 @@ const historySchema = new mongoose.Schema({
     transquestion: String,
     username: String,
     starttime: String,
+    embeddingmodel: String,
+    gptmodel: String,
+    knowageVersion: String,
+    promptTmplFile: String,
     pageContent1: {content:String,sourcepath:String},
     pageContent2: {content:String,sourcepath:String},
     pageContent3: {content:String,sourcepath:String},
@@ -37,9 +41,9 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse,
   ) {
-    const { username, history, question, filetime, response } = req.body;    
+    const { username, history, question, filetime, response, gptmodel, embeddingmodel, knowageVersion, promptTmplFile } = req.body;    
 
-    console.log(`save start ------------------------------ username:${username}`);
+    console.log(`save start ------------------------------ username:${username}`, 'gptmodel', gptmodel, 'embeddingmodel', embeddingmodel);
 
     //only accept post requests
     if (req.method !== 'POST') {
@@ -62,6 +66,10 @@ export default async function handler(
                 transquestion: response.finalquestion || "no data",
                 username:username,
                 starttime:filetime,
+                embeddingmodel:embeddingmodel,
+                gptmodel:gptmodel,
+                knowageVersion:knowageVersion,
+                promptTmplFile:promptTmplFile,
                 pageContent1: pageContent[0],
                 pageContent2: pageContent[1],
                 pageContent3: pageContent[2],

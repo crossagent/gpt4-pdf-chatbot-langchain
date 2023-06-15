@@ -2,6 +2,8 @@ import { OpenAI } from 'langchain/llms/openai';
 import { PineconeStore } from 'langchain/vectorstores/pinecone';
 import { ConversationalRetrievalQAChain } from 'langchain/chains';
 import {MyCallbackHandler} from 'utils/mycallback'
+import fs from 'fs';
+import path from 'path';
 
 const CONDENSE_PROMPT = `Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question in chinese.
 
@@ -19,10 +21,36 @@ If the question is not related to the context, politely respond that you are tun
 Question: {question}
 Helpful answer in markdown:`;
 
+// 读取prompt目录下的json文件
+function readJSONFile(version: string): { CONDENSE_PROMPT: string, QA_PROMPT: string } {
+  const fileName = path.join("prompts", version, `CONDENSE_PROMPT.txt`);
+  
+  if (!fs.existsSync(fileName)) {
+    throw new Error(`File ${fileName} does not exist.`);
+  }
+  
+  const fileContent = fs.readFileSync(fileName, 'utf-8');
+  const CONDENSE_PROMPT : string =  fileContent.trim(); // 去除首尾空白字符
+
+  const fileName2 = path.join("prompts", version, `QA_PROMPT.txt`);
+
+  if (!fs.existsSync(fileName2)) {
+    throw new Error(`File ${fileName2} does not exist.`);
+  }
+  
+  const fileContent2 = fs.readFileSync(fileName2, 'utf-8');
+  const QA_PROMPT : string =  fileContent2.trim(); // 去除首尾空白字符
+
+  return {CONDENSE_PROMPT, QA_PROMPT}
+}
+
+// Example usage
+const result = readJSONFile(process.env.PROMPT_VERSION as string);
+
 export const makeChain = (vectorstore: PineconeStore) => {
   const model = new OpenAI({
     temperature: 0, // increase temepreature to get more creative answers
-    modelName: 'gpt-3.5-turbo-16k-0613', //change this to gpt-4 if you have access
+    modelName: process.env.GPT_MODEL, //change this to gpt-4 if you have access
   });
 
   var handler = new MyCallbackHandler() 
@@ -31,8 +59,8 @@ export const makeChain = (vectorstore: PineconeStore) => {
     model,
     vectorstore.asRetriever(),
     {
-      qaTemplate: QA_PROMPT,
-      questionGeneratorTemplate: CONDENSE_PROMPT,
+      qaTemplate: result.QA_PROMPT,
+      questionGeneratorTemplate: result.CONDENSE_PROMPT,
       returnSourceDocuments: true, //The number of source documents returned is 4 by default
     },
   );

@@ -37,7 +37,7 @@ export default function Home() {
   const messageListRef = useRef<HTMLDivElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
-  const [id, setId] = useState<string|null>(null);
+  const [username, setUserName] = useState<string|null>(null);
   const [webhookUrl, setWebhookUrl] = useState<string|null>(null);
   
   const [filetime, setFileTime] = useState<string|null>(null);
@@ -65,7 +65,6 @@ export default function Home() {
       webhookUrl = localStorage.getItem('webhookUrl') || '';
     }
 
-    setId(id);
     setWebhookUrl(webhookUrl);
 
     const currentDate = new Date();
@@ -80,8 +79,33 @@ export default function Home() {
 
     setFileTime(fileName);
 
-    console.log(fileName);
+    getUserName();
   }, []);
+
+  async function getUserName() {
+    setUserName('白鼠001');
+    return;
+      try {
+        const response = await fetch(`http://172.31.6.56:9134/commonNotice/common/getUserInfo?ding_id=${localStorage.getItem('id')}`, {
+          method: 'Get',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        const data = await response.json();
+        const username = data.name;
+        const email = data.email;
+        console.log('get name', username);
+
+        if (data.error) {
+          setError(data.error);
+        } else
+        {
+          setUserName(username);
+        }
+      } catch (error) {
+      }
+  }
 
   //handle form submission
   async function handleSubmit(e: any) {
@@ -119,7 +143,7 @@ export default function Home() {
         body: JSON.stringify({
           question,
           history,
-          id,
+          username,
           filetime,
         }),
       });
@@ -139,10 +163,7 @@ export default function Home() {
           ];
         
           if (data.finalquestion) {
-            newMessages.unshift({
-              type: 'userMessage',
-              message: "根据对话，您的提问修正为：---" + data.finalquestion + "---",
-            });
+              console.log("根据对话，您的提问修正为：---" + data.finalquestion + "---");
           }
         
           return {
@@ -191,8 +212,8 @@ export default function Home() {
           },
           body: JSON.stringify({
             history,
-            id,
-            webhookUrl,
+            id:localStorage.getItem('id') || '',
+            webhookUrl:localStorage.getItem('webhookUrl') || '',
           }),
         });
         const data = await response.json();
@@ -212,7 +233,7 @@ export default function Home() {
             基于文档的知识库系统
           </h1>
           <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <p style={{ marginRight: '1em' }}>用户: {id}</p>
+            <p style={{ marginRight: '1em' }}>用户: {username}</p>
             <p>开始时间: {filetime}</p>
           </div>
           <main className={styles.main}>

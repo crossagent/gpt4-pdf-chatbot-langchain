@@ -11,7 +11,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  const { question, history, id, filetime } = req.body;
+  const { question, history, username, filetime } = req.body;
 
   console.log('question', question);
 
@@ -40,9 +40,13 @@ export default async function handler(
   try {
     const index = pinecone.Index(PINECONE_INDEX_NAME);
 
+    const embeddings = new OpenAIEmbeddings({});
+
+    console.log('namespace', PINECONE_NAME_SPACE);
+
     /* create vectorstore*/
     const vectorStore = await PineconeStore.fromExistingIndex(
-      new OpenAIEmbeddings({}),
+      embeddings,
       {
         pineconeIndex: index,
         textKey: 'text',
@@ -59,7 +63,7 @@ export default async function handler(
       chat_history: history || []
     });
 
-    //console.log('response', response);
+    console.log('response', response);
     response.finalquestion = finalquestion;
 
     // 在需要卸载该监听器的时候，使用 dataEventHandler 变量调用 off() 方法
@@ -71,9 +75,13 @@ export default async function handler(
     const payload = {
       question:question,
       history:history || [], 
-      username:id,
+      username:username,
       filetime:filetime,
-      response:{text:response.text, sourceDocuments:response.sourceDocuments, finalquestion:finalquestion}
+      response:{text:response.text, sourceDocuments:response.sourceDocuments, finalquestion:finalquestion},
+      embeddingmodel:embeddings.modelName,
+      gptmodel:process.env.GPT_MODEL,
+      knowageVersion:PINECONE_NAME_SPACE,
+      promptTmplFile:process.env.PROMPT_VERSION,
     }
 
     const forwardUrl = `http://${req.headers.host}/api/save`;
