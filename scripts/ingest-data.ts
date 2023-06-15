@@ -3,20 +3,23 @@ import { OpenAIEmbeddings } from 'langchain/embeddings/openai';
 import { PineconeStore } from 'langchain/vectorstores/pinecone';
 import { pinecone } from '@/utils/pinecone-client';
 import { PDFLoader } from 'langchain/document_loaders/fs/pdf';
+import { DocxLoader  } from 'langchain/document_loaders/fs/docx';
+import { UnstructuredLoader  } from 'langchain/document_loaders/fs/unstructured';
 import { PINECONE_INDEX_NAME, PINECONE_NAME_SPACE } from '@/config/pinecone';
 import { DirectoryLoader } from 'langchain/document_loaders/fs/directory';
 
 /* Name of directory to retrieve your files from 
    Make sure to add your PDF files inside the 'docs' folder
 */
-const filePath = 'docs';
+const filePath = 'docspdf';
 
 export const run = async () => {
   try {
     /*load raw docs from the all files in the directory */
     const directoryLoader = new DirectoryLoader(filePath, {
       '.pdf': (path) => new PDFLoader(path),
-    });
+      '.docx': (path) => new DocxLoader(path),
+    },);
 
     // const loader = new PDFLoader(filePath);
     const rawDocs = await directoryLoader.load();

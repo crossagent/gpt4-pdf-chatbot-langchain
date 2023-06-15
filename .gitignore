@@ -45,4 +45,6 @@ next-env.d.ts
 
 # files
 /docs
+/docspdf
 *.pdf
+*.md
