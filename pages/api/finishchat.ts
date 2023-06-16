@@ -5,9 +5,9 @@ export default async function handler(
   res: NextApiResponse,
 ) 
 {
-  const { webhookUrl, history, id } = req.body;
+  const { webhookUrl, history, id, rating } = req.body;
 
-  console.log('id', id, 'webhookUrl', webhookUrl, 'history', history);
+  console.log('id', id, 'webhookUrl', webhookUrl, 'history', history, 'rate', rating);
 
 
   //only accept post requests
@@ -19,7 +19,7 @@ export default async function handler(
   //处理一下换行
   const historyString = history
   .map(([question, answer]:[string, string]) => `Q：${question}\n\n A：${answer}`)
-  .join('\n\n\n\n');
+  .join('\n\n-----------------------------------\n\n');
 
 
   try {
@@ -30,7 +30,7 @@ export default async function handler(
       atData: `{"isAtAll":false,"atMobiles":[],"atUserIds":[${id}]}`,
       title: `${id}`,
       btnOrientation: '0', 
-      btns: [{ title: '问题已解决'},{ title: '问题未解决'}], 
+      btns: [{ title: `问题得分：${rating}`}], 
     };
 
     const forwardUrl = 'http://172.31.6.56:9140/dingForwardRobot/common/sendMessage';

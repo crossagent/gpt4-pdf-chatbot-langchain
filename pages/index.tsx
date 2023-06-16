@@ -6,13 +6,13 @@ import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import LoadingDots from '@/components/ui/LoadingDots';
 import { Document } from 'langchain/document';
+import { Button, Modal, Rate } from 'antd';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { set } from 'mongoose';
 
 export default function Home() {
   const [query, setQuery] = useState<string>('');
@@ -42,6 +42,11 @@ export default function Home() {
   const [konwledgebaseName, setKonwledgebaseName] = useState<string|null>(null);
   
   const [filetime, setFileTime] = useState<string|null>(null);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loadingRating, setRatingLoading] = useState(false);
+  const [isChecked, setIsChecked] = useState(true);
+  const [rating, setRating] = useState(2.5);
 
   function InitDataByUrlOrLoacal(data:string, localname:string) : string
   {
@@ -94,8 +99,6 @@ export default function Home() {
 
     
   }, []);
-
-
 
   //handle form submission
   async function handleSubmit(e: any) {
@@ -186,16 +189,43 @@ export default function Home() {
     }
   };
 
-  //完成提问
-  async function handleComplete(e: any) {
-    //e.preventDefault();
+  const handleCheckboxChange = (e : any) => {
+    setIsChecked(e.target.checked);
+  };
 
-    const isDingdingChecked = e.target.dingding.checked;
-    console.log('isDingdingChecked:', isDingdingChecked);
+  const handleRateChange = (value : any) => {
+    setRating(value);
+  };
 
-    if (isDingdingChecked)
-    {
-      try {
+  const handleCancel = () => {
+    setIsModalOpen(false);
+    setRatingLoading(false);
+  };
+
+  const handleOk = async () => {
+    console.log('history', history);
+
+    try {
+      // 保存评分结果结果到数据库
+      const response = await fetch('/api/savefinalResult', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          history,
+          username,
+          konwledgebaseName,
+          filetime,
+          rating,
+        }),
+      });
+
+      console.log('response', response);
+
+      // 判断是否要转发到钉钉
+      if (isChecked)
+      {
         const response = await fetch('/api/finishchat', {
           method: 'POST',
           headers: {
@@ -205,17 +235,32 @@ export default function Home() {
             history,
             id:localStorage.getItem('id') || '',
             webhookUrl:localStorage.getItem('webhookUrl') || '',
+            rating,
           }),
         });
         const data = await response.json();
         console.log('data', data);
-      }catch (error) {
-        setLoading(false);
-        setError('An error occurred while fetching the data. Please try again.');
-        console.log('error', error);
       }
+    }catch (error) {
+      setLoading(false);
+      setError('An error occurred while fetching the data. Please try again.');
+      console.log('error', error);
     }
+    
+  
+    // 关闭弹出框
+    setIsModalOpen(false);
+    setRatingLoading(false);
+    // 刷新页面
+    window.location.reload();
+  };
+
+  //完成提问
+  async function handleComplete() {
+    setIsModalOpen(true);
+    setRatingLoading(true);
   }
+
   return (
     <>
       <Layout>
@@ -353,14 +398,34 @@ export default function Home() {
                   </button>
                 </form>
               </div>
-              <form onSubmit={handleComplete}>
-                <label>
-                  <input type="checkbox" name="dingding" defaultChecked/>
-                  同时转发到钉钉
-                </label>
-                <br />
-                <button type="submit" disabled={loading} className={styles.completebutton} >完成提问</button>
-              </form>    
+              <div>
+                <Button
+                  type="default"
+                  disabled={loadingRating}
+                  onClick={handleComplete}
+                >
+                  完成提问
+                </Button>
+                <Modal
+                  title="请问本次的回答打分"
+                  open={isModalOpen}
+                  onOk={handleOk}
+                  onCancel={handleCancel}
+                >
+                  <Rate allowHalf defaultValue={2.5} onChange={handleRateChange} />
+                  <div>
+                    <label>
+                      <input
+                        type="checkbox"
+                        name="dingding"
+                        checked={isChecked}
+                        onChange={handleCheckboxChange}
+                      />
+                      同时转发结果到钉钉
+                    </label>
+                  </div>
+                </Modal>
+              </div> 
             </div>
             {error && (
               <div className="border border-red-400 rounded-md p-4">

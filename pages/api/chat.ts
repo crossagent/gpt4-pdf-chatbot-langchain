@@ -40,7 +40,7 @@ export default async function handler(
   try {
     const index = pinecone.Index(PINECONE_INDEX_NAME);
 
-    const embeddings = new OpenAIEmbeddings({});
+    const embeddings = new OpenAIEmbeddings({modelName: process.env.EMBEDDING_MODEL});
 
     console.log('namespace', konwledgebaseName);
 
@@ -78,7 +78,7 @@ export default async function handler(
       username:username,
       filetime:filetime,
       response:{text:response.text, sourceDocuments:response.sourceDocuments, finalquestion:finalquestion},
-      embeddingmodel:embeddings.modelName,
+      embeddingmodel:process.env.EMBEDDING_MODEL,
       gptmodel:process.env.GPT_MODEL,
       knowageVersion:konwledgebaseName,
       promptTmplFile:process.env.PROMPT_VERSION,

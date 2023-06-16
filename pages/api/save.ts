@@ -3,12 +3,7 @@ import mongoose from 'mongoose';
 import { cwd } from 'process';
 import { join } from 'path';
 import fs from 'fs';
-
-// 连接 MongoDB 数据库
-mongoose.connect(String(process.env.MONGODB_PATH));
-
-// 获取数据库连接对象
-const db = mongoose.connection;
+import db from '@/utils/db';
 
 // 定义数据模型
 const historySchema = new mongoose.Schema({
@@ -31,11 +26,7 @@ const historySchema = new mongoose.Schema({
 // 创建数据模型
 const History = mongoose.models.SocProject || mongoose.model('SocProject', historySchema);
 
-// 检测连接是否成功
-db.on('error', console.error.bind(console, 'MongoDB connection error:'));
-db.once('open', function() {
-  console.log('MongoDB connected!');
-});
+db.connect();
 
 export default async function handler(
     req: NextApiRequest,

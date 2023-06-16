@@ -259,14 +259,4 @@
     width: 100%;
     text-align: center;
   }
-
-  .completebutton {
-    padding: 10px 20px;
-    border: 1px solid #ccc; /* 添加灰色边框 */
-    border-radius: 5px;
-    background-color: #fff;
-    color: #050505;
-    font-size: 20px;
-    margin-left: 10px;
-  }
 }
