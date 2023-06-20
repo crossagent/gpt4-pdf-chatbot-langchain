@@ -2,6 +2,7 @@ import os
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.document_loaders.markdown import UnstructuredMarkdownLoader
+from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.document_loaders.directory import DirectoryLoader
 from langchain.vectorstores.pinecone import Pinecone
 import pinecone
@@ -25,7 +26,7 @@ print(os.path.join(cwd, file_path))
 def run():
     try:
         # Load raw docs from all files in the directory
-        directory_loader = DirectoryLoader(file_path, glob='*.md', loader_cls=UnstructuredMarkdownLoader, loader_kwargs={
+        directory_loader = DirectoryLoader(file_path, glob='**/*.md', loader_cls=UnstructuredMarkdownLoader, loader_kwargs={
         }, show_progress=True)
 
         raw_docs = directory_loader.load()
@@ -39,7 +40,7 @@ def run():
         # Split the documents
         docs = text_splitter.split_documents(raw_docs)
         print('split docs:', docs)
-
+    
         print('creating vector store...')
         # Create and store the embeddings in the vectorStore
         embeddings = OpenAIEmbeddings()
@@ -47,13 +48,13 @@ def run():
         active_indexes = pinecone.list_indexes()
 
         if PINECONE_INDEX_NAME not in active_indexes:
-            print('creating index...')
+            print(f'creating index to {PINECONE_NAME_SPACE}------------------------------')
             pinecone.create_index(PINECONE_INDEX_NAME, dimension=1536)
         else:
-            print('update index...')
+            print(f'update index to {PINECONE_NAME_SPACE}------------------------------')
             index = pinecone.Index(PINECONE_INDEX_NAME)
             delete_response = index.delete(deleteAll='true', namespace=PINECONE_NAME_SPACE)
-            print('delete response:', delete_response)
+            print(f'delete response:', delete_response)
 
         # Embed the PDF documents
         Pinecone.from_documents(docs, embeddings, index_name = PINECONE_INDEX_NAME, namespace = PINECONE_NAME_SPACE, text_key = 'text')

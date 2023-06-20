@@ -5,7 +5,7 @@ export default async function handler(
   res: NextApiResponse,
 ) 
 {
-  const { webhookUrl, history, id, rating } = req.body;
+  const { webhookUrl, history, id, rating, username } = req.body;
 
   console.log('id', id, 'webhookUrl', webhookUrl, 'history', history, 'rate', rating);
 
@@ -26,11 +26,9 @@ export default async function handler(
     //转发给http://172.31.6.56:9140/dingForwardRobot/common/sendMessage
     const payload = {
       webhookUrl: webhookUrl,
-      content: `[ @609055430 ](http://)的对话历史 \n\n` + historyString,
+      content: `[ @609055430 ](http://) ${username}的对话历史 \n\n` + historyString + `\n\n-----------最终得分:${rating}-------------`,
       atData: `{"isAtAll":false,"atMobiles":[],"atUserIds":[${id}]}`,
       title: `${id}`,
-      btnOrientation: '0', 
-      btns: [{ title: `问题得分：${rating}`}], 
     };
 
     const forwardUrl = 'http://172.31.6.56:9140/dingForwardRobot/common/sendMessage';

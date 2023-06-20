@@ -236,6 +236,7 @@ export default function Home() {
             id:localStorage.getItem('id') || '',
             webhookUrl:localStorage.getItem('webhookUrl') || '',
             rating,
+            username,
           }),
         });
         const data = await response.json();

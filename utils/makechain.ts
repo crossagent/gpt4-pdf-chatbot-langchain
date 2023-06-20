@@ -4,6 +4,7 @@ import { ConversationalRetrievalQAChain } from 'langchain/chains';
 import {MyCallbackHandler} from 'utils/mycallback'
 import fs from 'fs';
 import path from 'path';
+import { Faster_One } from 'next/font/google';
 
 const CONDENSE_PROMPT = `Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question in chinese.
 
@@ -62,9 +63,11 @@ export const makeChain = (vectorstore: PineconeStore) => {
       qaTemplate: result.QA_PROMPT,
       questionGeneratorTemplate: result.CONDENSE_PROMPT,
       returnSourceDocuments: true, //The number of source documents returned is 4 by default
+      verbose : false
     },
   );
 
+  
   chain.questionGeneratorChain.callbacks = [handler];
 
   return chain;

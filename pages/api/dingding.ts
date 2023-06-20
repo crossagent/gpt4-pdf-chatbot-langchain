@@ -47,11 +47,10 @@ export default async function handler(
     //转发给http://172.31.6.56:9140/dingForwardRobot/common/sendMessage
     const payload = {
       webhookUrl: webhook,
-      content: `你好[ @${name} ](http://),欢迎使用智能助手`,
+      content: `你好[ @${name} ](http://),欢迎使用智能助手,[点击打开](http://${req.headers.host}/?id=${userId}&webhookUrl=${webhook}&username=${username}&konwledgebaseName=${process.env.PINECONE_NAME_SPACE_SEARCH})`,
       atData: `{"isAtAll":false,"atMobiles":[],"atUserIds":[${name}]}`,
       title: `${name}`,
       btnOrientation: '0', 
-      btns: [{ title: '新的提问', actionURL: `http://${req.headers.host}/?id=${userId}&webhookUrl=${webhook}&username=${username}&konwledgebaseName=${process.env.PINECONE_NAME_SPACE_SEARCH}` },], 
     };
 
     const forwardUrl = 'http://172.31.6.56:9140/dingForwardRobot/common/sendMessage';

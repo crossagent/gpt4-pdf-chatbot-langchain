@@ -1,0 +1,5 @@
+`Given the following conversation history and a subsequent question, please rephrase the subsequent question into an independent question, including the information about the questioner, the intent of the questioner's current question, and the most needed information to obtain. The question should be in Chinese.
+    Chat History:
+    {chat_history}
+    Follow Up Input: {question}
+    Standalone question:`
